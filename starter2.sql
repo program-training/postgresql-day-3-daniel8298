@@ -2,16 +2,20 @@
 
 --1
 SELECT customers.company_name
-FROM customers LEFT OUTER JOIN orders
-ON customers.customer_id = orders.customer_id
-WHERE orders.customer_id IS NULL
+FROM customers WHERE customer_id NOT IN (
+    SELECT customer_id
+    FROM orders
+);
 
 --2
 SELECT customers.company_name
-FROM customers INNER JOIN orders
-ON customers.customer_id = orders.customer_id
-GROUP BY customers.company_name
-HAVING COUNT(orders.customer_id) > 10
+FROM customers
+WHERE customer_id IN (
+    SELECT customer_id
+    FROM orders
+    GROUP BY customer_id
+    HAVING COUNT(orders.customer_id) > 10
+);
 
 
 
@@ -23,29 +27,39 @@ FROM products
 
 --4
 SELECT products.product_name
-FROM products LEFT OUTER JOIN order_details
-ON products.product_id = order_details. product_id
-WHERE order_details.product_id IS NULL
+FROM products WHERE product_id NOT IN (
+    SELECT product_id
+    FROM order_details
+);
 
 --5
-SELECT customers.country,COUNT(customers.customer_id) AS NumOfCustomers FROM customers
+SELECT customers.country,COUNT(customers.country)  AS numOfCustomers
+FROM customers
+WHERE customers.country IN (
+    SELECT country
+    FROM customers
+    GROUP BY customers.country
+    HAVING COUNT(customers.customer_id) >= 5
+)
 GROUP BY customers.country
-HAVING COUNT(customers.customer_id) >= 5
 
 --6
 SELECT customers.customer_id
-FROM customers LEFT OUTER JOIN orders
-ON customers.customer_id = orders.customer_id
-AND EXTRACT(YEAR FROM orders.order_date) = 1998 
-WHERE orders.order_id IS NULL
+FROM customers WHERE customers.customer_id NOT IN (
+    SELECT orders.customer_id
+    FROM orders
+    WHERE EXTRACT(YEAR FROM orders.order_date) = 1998 
+)
+
 
 --7
-SELECT customers.customer_id, customers.company_name,orders.order_date
-FROM customers LEFT OUTER JOIN orders
-ON customers.customer_id = orders.customer_id
-WHERE customers.country = 'Germany'
-AND (orders.order_id IS NULL OR orders.order_date <= '1998-01-01');
-
+SELECT customer_id
+FROM customers
+WHERE customer_id NOT IN (
+    SELECT customer_id
+    FROM orders
+    WHERE order_date > '1998-01-01'
+) AND customers.country = 'Germany'
 
 
 --8
@@ -70,6 +84,7 @@ LIMIT 1;
 SELECT suppliers.supplier_id, suppliers.company_name, suppliers.country, COUNT(products.product_id) AS numOfSupplied
 FROM suppliers
 INNER JOIN products ON suppliers.supplier_id = products.supplier_id
+INNER JOIN order_details ON products.product_id = order_details.product_id
 WHERE suppliers.country = 'USA'
 GROUP BY suppliers.supplier_id, suppliers.company_name, suppliers.country
-HAVING COUNT(products.product_id) > 1;
+HAVING COUNT(order_details.product_id) > 1;
