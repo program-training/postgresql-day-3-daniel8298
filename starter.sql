@@ -1,3 +1,5 @@
+-- Active: 1695105331548@@127.0.0.1@5432@northwind @public
+
 -- 1
 SELECT employees.first_name,COUNT(orders.order_id) AS number_order
 FROM employees INNER JOIN orders
@@ -15,13 +17,20 @@ GROUP BY categories.category_name
 ORDER BY TotalSales DESC;
 
 -- 3
-SELECT customers.company_name,AVG(order_details.unit_price * order_details.quantity *(1-order_details.discount)) AS AverageOrderPrice
-FROM customers INNER JOIN orders 
-ON customers.customer_id = orders.customer_id
-INNER JOIN order_details 
-ON orders.order_id = order_details.order_id
-GROUP BY customers.company_name
-ORDER BY AverageOrderPrice DESC;
+
+SELECT customers.contact_name, AVG(sumOrderPrice.orderPrice) AS averageOrderPrice
+FROM customers
+INNER JOIN (
+    SELECT orders.customer_id,
+        SUM(order_details.unit_price * order_details.quantity * (1 - order_details.discount)) AS orderPrice
+    FROM orders INNER JOIN order_details
+    ON orders.order_id = order_details.order_id
+    GROUP BY orders.order_id
+) AS sumOrderPrice ON customers.customer_id = sumOrderPrice.customer_id
+GROUP BY customers.customer_id, customers.contact_name
+ORDER BY averageOrderPrice DESC;
+
+
 
 -- 4
 SELECT customers.company_name,SUM(order_details.unit_price * order_details.quantity *(1-order_details.discount)) AS AverageOrderPrice
